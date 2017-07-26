@@ -10,65 +10,63 @@ require 'string/similarity'
 require 'nokogiri'
 require './zip_utils'
 
-$github_repo = "voidstate/xwing-card-images"
-$github_branch = "master"
+
 
 vassal_mod = ARGV[0]
-image_db_path = "#{File.dirname(__FILE__)}/image-db/xwing-card-images-#{$github_branch}"
+image_db_path = "#{File.dirname(__FILE__)}/xwing-data/images"
 
-def remote_images_sha()
-  api_base = "https://api.github.com/repos"
-  uri = URI.parse("#{api_base}/#{$github_repo}/commits/#{$github_branch}")
-  request = Net::HTTP::Get.new(uri.request_uri)
-  request["Accept"] = "application/vnd.github.v3+sha"
+# def remote_images_sha()
+#   api_base = "https://api.github.com/repos"
+#   uri = URI.parse("#{api_base}/#{$github_repo}/commits/#{$github_branch}")
+#   request = Net::HTTP::Get.new(uri.request_uri)
+#   request["Accept"] = "application/vnd.github.v3+sha"
 
-  http = Net::HTTP.new(uri.host, uri.port)
-  http.use_ssl = true
-  response = http.request(request)
-  return nil if response.code != "200"
-  return response.body
-end
+#   http = Net::HTTP.new(uri.host, uri.port)
+#   http.use_ssl = true
+#   response = http.request(request)
+#   return nil if response.code != "200"
+#   return response.body
+# end
 
-def current_repo_sha()
-  begin
-    open("#{File.dirname(__FILE__)}/image-db/sha").read
-  rescue
-    nil
-  end
-end
+# def current_repo_sha()
+#   begin
+#     open("#{File.dirname(__FILE__)}/image-db/sha").read
+#   rescue
+#     nil
+#   end
+# end
 
-def download_repo(sha)
-  temp_file = Tempfile.new('images_zip')
-  open(temp_file.path, 'wb') do |file|
-    file << open("https://github.com/#{$github_repo}/archive/#{$github_branch}.zip").read
-  end
+# def download_repo(sha)
+#   temp_file = Tempfile.new('images_zip')
+#   open(temp_file.path, 'wb') do |file|
+#     file << open("https://github.com/#{$github_repo}/archive/#{$github_branch}.zip").read
+#   end
 
-  FileUtils.rmtree("#{File.dirname(__FILE__)}/image-db")
-  FileUtils.mkdir("#{File.dirname(__FILE__)}/image-db")
-  ZipFileGenerator.extract_zip(temp_file.path, "#{File.dirname(__FILE__)}/image-db")
-  open("#{File.dirname(__FILE__)}/image-db/sha", 'wb') do |f|
-    f << sha
-  end
-end
+#   FileUtils.rmtree("#{File.dirname(__FILE__)}/image-db")
+#   FileUtils.mkdir("#{File.dirname(__FILE__)}/image-db")
+#   ZipFileGenerator.extract_zip(temp_file.path, "#{File.dirname(__FILE__)}/image-db")
+#   open("#{File.dirname(__FILE__)}/image-db/sha", 'wb') do |f|
+#     f << sha
+#   end
+# end
 
 def load_card_images(image_db_path)
   cards = []
-  for f in Dir.glob("#{image_db_path}/images/**/*") do
+  for f in Dir.glob("#{image_db_path}/{pilots,upgrades}/**/*") do
     next if !f.match(/.*.jpg$/) and !f.match(/.*.png$/)
-    f = f.gsub(image_db_path, "")
+    f = f.gsub("./xwing-data/images", "")
     split = f.split('/')
     card = {}
-    card[:type] = split[2]
+    card[:type] = split[1]
     card[:path] = f
     if card[:type] == "pilots"
-      card[:faction] = split[3]
-      card[:ship] = split[4]
-      card[:name] = split[5].gsub(".png", "").gsub(".jpg", "")
-    else
-      card[:upgrade_type] = split[3]
+      card[:faction] = split[2]
+      card[:ship] = split[3]
       card[:name] = split[4].gsub(".png", "").gsub(".jpg", "")
+    else
+      card[:upgrade_type] = split[2]
+      card[:name] = split[3].gsub(".png", "").gsub(".jpg", "")
     end
-    card[:clean_name] = normalize_name(card[:name])
     cards << card
   end
   cards
@@ -217,20 +215,20 @@ def card_to_s(card)
 end
 
 def copy_match(image_db_path, zip_dir, vassal_card, match)
-  p vassal_card
-  p match
+  # p vassal_card
+  # p match
     FileUtils.copy("#{image_db_path}/#{match[:path]}", "#{zip_dir}/images/#{vassal_card[:path]}")
 end
 
 #######################################
 
-remote_sha = remote_images_sha
-if remote_sha != current_repo_sha
-  puts "Downloading new version of xwing-card-images"
-  download_repo(remote_sha)
-else
-  puts "xwing-card-images up to date"
-end
+# remote_sha = remote_images_sha
+# if remote_sha != current_repo_sha
+#   puts "Downloading new version of xwing-card-images"
+#   download_repo(remote_sha)
+# else
+#   puts "xwing-card-images up to date"
+# end
 
 overrides = JSON.parse(File.read("#{File.dirname(__FILE__)}/overrides.json"))
 

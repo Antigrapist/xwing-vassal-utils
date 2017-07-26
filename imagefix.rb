@@ -129,7 +129,7 @@ def normalize_name(f)
 end
 
 def is_excluded(name)
-  ["firstorderback", "resistanceback", "back",
+  ["firstorderback", "resistanceback", "bac+k",
     "imperialback", "rebelback", "scumback"].include? name or name.match(/.*crippled$/)
 end
 
@@ -217,7 +217,9 @@ def card_to_s(card)
 end
 
 def copy_match(image_db_path, zip_dir, vassal_card, match)
-  FileUtils.copy("#{image_db_path}/#{match[:path]}", "#{zip_dir}/images/#{vassal_card[:path]}")
+  p vassal_card
+  p match
+    FileUtils.copy("#{image_db_path}/#{match[:path]}", "#{zip_dir}/images/#{vassal_card[:path]}")
 end
 
 #######################################
@@ -252,7 +254,7 @@ for vassal_card in vassal_cards do
     puts "Low match found: #{match[:score]}: #{card_to_s(vassal_card)} -> #{card_to_s(match[:match])}"
     puts "Accept ? (y/n)"
     response = STDIN.gets.chomp
-    if response == "y"
+    if response.downcase == "y"
       copy_match(image_db_path, zip_dir, vassal_card, match[:match])
     end
   end
